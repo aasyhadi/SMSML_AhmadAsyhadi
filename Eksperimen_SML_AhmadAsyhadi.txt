@@ -1,0 +1,3 @@
+Isi dengan tautan repository GitHub public Kriteria 1.
+Contoh:
+https://github.com/aasyhadi/Eksperimen_SML_AhmadAsyhadi

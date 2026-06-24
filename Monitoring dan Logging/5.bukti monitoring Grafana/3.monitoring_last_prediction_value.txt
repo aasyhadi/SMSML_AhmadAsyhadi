@@ -1,0 +1,1 @@
+Screenshot panel Grafana metric last_prediction_value ditempatkan di sini.

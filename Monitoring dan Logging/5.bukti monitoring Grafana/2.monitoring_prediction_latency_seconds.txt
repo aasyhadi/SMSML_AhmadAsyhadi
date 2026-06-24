@@ -1,0 +1,1 @@
+Screenshot panel Grafana metric prediction_latency_seconds ditempatkan di sini.

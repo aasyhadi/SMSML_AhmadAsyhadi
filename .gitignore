@@ -1,0 +1,24 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# VSCode
+.vscode/
+
+# Dataset besar
+*.pkl
+*.joblib
+
+# Logs
+*.log
+
+artifacts/
+*.png
+*.json
+
+Membangun_model/artifacts/
