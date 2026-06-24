@@ -1,3 +1,2 @@
 Isi dengan tautan repository GitHub public Kriteria 3.
-Contoh:
-https://github.com/aasyhadi/Workflow-CI
+https://github.com/aasyhadi/SMSML_AhmadAsyhadi/tree/main/Workflow-CI
