@@ -1,77 +1,90 @@
-from prometheus_client import start_http_server, Counter, Gauge
+from flask import Flask, request, jsonify, Response
+import requests
 import time
-import random
 import psutil
+from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 
-# Business Metrics
+app = Flask(__name__)
+
 REQUEST_COUNT = Counter(
-    "inference_request_total",
-    "Total jumlah request inference"
+    "http_requests_total",
+    "Total HTTP Requests"
 )
 
 PREDICTION_COUNT = Counter(
-    "prediction_total",
-    "Total jumlah prediksi"
+    "prediction_requests_total",
+    "Total prediction requests"
 )
 
-MODEL_ACCURACY = Gauge(
-    "model_accuracy",
-    "Akurasi model terakhir"
-)
-
-MODEL_F1_SCORE = Gauge(
-    "model_f1_score",
-    "F1 score model terakhir"
-)
-
-LATENCY = Gauge(
-    "inference_latency_seconds",
-    "Latency inference dalam detik"
+REQUEST_LATENCY = Histogram(
+    "prediction_latency_seconds",
+    "Prediction latency seconds"
 )
 
 LAST_PREDICTION = Gauge(
     "last_prediction_value",
-    "Nilai prediksi terakhir"
+    "Last prediction result"
 )
 
-# System Metrics
-HTTP_REQUESTS_TOTAL = Counter(
-    "http_requests_total",
-    "Total HTTP requests"
-)
-
-SYSTEM_CPU_USAGE = Gauge(
+CPU_USAGE = Gauge(
     "system_cpu_usage",
-    "CPU usage percentage"
+    "CPU Usage Percentage"
 )
 
-SYSTEM_RAM_USAGE = Gauge(
+RAM_USAGE = Gauge(
     "system_ram_usage",
-    "RAM usage percentage"
+    "RAM Usage Percentage"
 )
+
+
+@app.route("/", methods=["GET"])
+def home():
+    REQUEST_COUNT.inc()
+    return jsonify({"status": "running"})
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    REQUEST_COUNT.inc()
+    return jsonify({"status": "healthy"})
+
+
+@app.route("/metrics", methods=["GET"])
+def metrics():
+    CPU_USAGE.set(psutil.cpu_percent(interval=1))
+    RAM_USAGE.set(psutil.virtual_memory().percent)
+    return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
+
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    start_time = time.time()
+
+    REQUEST_COUNT.inc()
+    PREDICTION_COUNT.inc()
+
+    api_url = "http://127.0.0.1:5005/invocations"
+    data = request.get_json()
+
+    try:
+        response = requests.post(api_url, json=data)
+        duration = time.time() - start_time
+
+        REQUEST_LATENCY.observe(duration)
+
+        result = response.json()
+
+        try:
+            prediction = result["predictions"][0]
+            LAST_PREDICTION.set(float(prediction))
+        except Exception:
+            LAST_PREDICTION.set(0)
+
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
-    start_http_server(8001)
-
-    while True:
-        # Simulasi request
-        REQUEST_COUNT.inc()
-        PREDICTION_COUNT.inc()
-        HTTP_REQUESTS_TOTAL.inc()
-
-        # Model metrics
-        MODEL_ACCURACY.set(0.9649)
-        MODEL_F1_SCORE.set(0.95)
-        LATENCY.set(random.uniform(0.01, 0.20))
-
-        prediction = random.choice([0, 1])
-        LAST_PREDICTION.set(prediction)
-
-        # System metrics
-        SYSTEM_CPU_USAGE.set(psutil.cpu_percent())
-
-        SYSTEM_RAM_USAGE.set(
-            psutil.virtual_memory().percent
-        )
-
-        time.sleep(5)
+    app.run(host="127.0.0.1", port=8000)

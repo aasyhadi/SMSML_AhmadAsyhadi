@@ -3,7 +3,5 @@ global:
 
 scrape_configs:
   - job_name: "smsml_breast_cancer"
-
     static_configs:
-      - targets:
-          - "localhost:8001"
+      - targets: ["127.0.0.1:8000"]
