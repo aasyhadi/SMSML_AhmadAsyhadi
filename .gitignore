@@ -17,6 +17,5 @@ mlartifacts/
 # Logs
 *.log
 
-artifacts/
-*.png
-*.json
+# Artifacts
+Membangun_model/artifacts/
