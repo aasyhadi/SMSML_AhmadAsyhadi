@@ -1,1 +1,13 @@
-Isi folder ini dengan screenshot bukti serving lokal, contoh: uvicorn prometheus_exporter:app --reload --port 8000 dan akses http://127.0.0.1:8000/docs.
+Model serving berhasil dijalankan secara lokal menggunakan FastAPI.
+
+Endpoint:
+http://127.0.0.1:8000/
+
+Response:
+{"status":"running"}
+
+Health Check:
+http://127.0.0.1:8000/health
+
+Response:
+{"status":"healthy"}

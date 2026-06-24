@@ -1,1 +1,0 @@
-Screenshot rule alert Grafana untuk metric prediction_errors_total.
