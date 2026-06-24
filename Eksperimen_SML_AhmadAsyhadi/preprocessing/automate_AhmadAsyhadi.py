@@ -1,41 +1,56 @@
-"""
-Automasi preprocessing dataset Breast Cancer.
-Output: breast_cancer_preprocessing.csv siap dipakai untuk modelling.
-"""
 from pathlib import Path
+
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-
-RAW_PATH = Path(__file__).resolve().parents[1] / "namadataset_raw" / "breast_cancer_raw.csv"
-OUT_DIR = Path(__file__).resolve().parent / "namadataset_preprocessing"
-OUT_PATH = OUT_DIR / "breast_cancer_preprocessing.csv"
+from sklearn.preprocessing import StandardScaler
 
 
-def preprocess(input_path: str | Path = RAW_PATH, output_path: str | Path = OUT_PATH) -> pd.DataFrame:
-    input_path = Path(input_path)
-    output_path = Path(output_path)
-    df = pd.read_csv(input_path)
-    df = df.drop_duplicates().copy()
+def preprocess_data():
+    current_dir = Path(__file__).resolve().parent
+    base_dir = current_dir.parent
 
-    # Handle missing value numerik dengan median.
-    numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
-    for col in numeric_cols:
-        df[col] = df[col].fillna(df[col].median())
+    raw_path = base_dir / "namadataset_raw" / "breast_cancer_raw.csv"
 
-    # Encoding target.
-    encoder = LabelEncoder()
-    df["diagnosis"] = encoder.fit_transform(df["diagnosis"])  # benign=0, malignant=1 tergantung urutan encoder
+    output_dir = current_dir / "namadataset_preprocessing"
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Scaling feature.
-    feature_cols = [c for c in df.columns if c != "diagnosis"]
+    output_path = output_dir / "breast_cancer_preprocessing.csv"
+
+    df = pd.read_csv(raw_path)
+
+    drop_columns = ["id", "Unnamed: 32"]
+    df = df.drop(columns=[col for col in drop_columns if col in df.columns])
+
+    df["diagnosis"] = df["diagnosis"].replace({
+        "B": 0,
+        "M": 1,
+        "benign": 0,
+        "malignant": 1
+    })
+
+    df["diagnosis"] = pd.to_numeric(df["diagnosis"], errors="coerce")
+    df = df.dropna(subset=["diagnosis"]).copy()
+    df["diagnosis"] = df["diagnosis"].astype(int)
+
+    X = df.drop(columns=["diagnosis"])
+    y = df["diagnosis"]
+
     scaler = StandardScaler()
-    df[feature_cols] = scaler.fit_transform(df[feature_cols])
+    X_scaled = scaler.fit_transform(X)
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(output_path, index=False)
-    print(f"Preprocessed dataset saved to: {output_path}")
-    return df
+    preprocessed_df = pd.DataFrame(
+        X_scaled,
+        columns=X.columns
+    )
+
+    preprocessed_df["diagnosis"] = y.reset_index(drop=True)
+
+    preprocessed_df.to_csv(output_path, index=False)
+
+    print("Preprocessing selesai.")
+    print(f"Input file : {raw_path}")
+    print(f"Output file: {output_path}")
+    print(f"Shape      : {preprocessed_df.shape}")
 
 
 if __name__ == "__main__":
-    preprocess()
+    preprocess_data()
